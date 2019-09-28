@@ -124,8 +124,41 @@ def _depthFirstSearch( currentPoint, actionHistory, visited, problem ):
 
 
 def breadthFirstSearch(problem):
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from collections import deque
+
+    startingPoint = problem.getStartState()
+    queue = deque([startingPoint]) #util.Queue()
+
+    currentPoint = queue.popleft()
+    visited = {}
+    get_parent = { startingPoint[0] : { startingPoint[1]: None } }
+    while( not problem.isGoalState( currentPoint )  ):
+        if not currentPoint[0] in visited:
+            visited[currentPoint[0]] = {}
+        if not currentPoint[1] in visited[currentPoint[0]]:
+            visited[currentPoint[0]][currentPoint[1]] = True
+
+        for successor in problem.getSuccessors(currentPoint):
+            if not ((successor[0][0] in visited) and (successor[0][1] in visited[successor[0][0]])):
+                if not successor[0][0] in get_parent:
+                    get_parent[successor[0][0]] = {}
+                if not successor[0][1] in get_parent[successor[0][0]]:
+                    _parent =  list( currentPoint )
+                    _parent.append( successor[1] )
+                    get_parent[successor[0][0]][successor[0][1]] =  _parent # get parent also contains the direction from parent
+                queue.append( successor[0] ) # queue[i][3] == parent_point
+        currentPoint = queue.popleft()
+
+    # currentPoint == goal_state
+    action_history = deque()
+    parent = get_parent[currentPoint[0]][currentPoint[1]]
+    print(currentPoint)
+    while ( type(parent) != type(None) ):
+        action_history.appendleft( parent[2] )
+        parent = get_parent[parent[0]][parent[1]]
+
+    return  action_history
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
