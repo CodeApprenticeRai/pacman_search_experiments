@@ -18,6 +18,7 @@ Pacman agents (in searchAgents.py).
 """
 
 import util
+import heapq
 
 class SearchProblem:
     """
@@ -162,8 +163,58 @@ def breadthFirstSearch(problem):
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    '''
+        Algorithm:
+        
+        
+        We have a min-heap:
+        We have objects denoted: node_key : { path, path_sum } 
+        We have an initial object that is  [ starting_point,  [], 0 ]
+        
+        while ( we haven't reached our goal AND the min-heap is not empty ):  
+            current_obj = heap.pop()
+        for successor in problem.getSuccessors(initial_object):
+            successor_obj = [
+                succesor[0],
+                current_obj["action_history"] + [sucessor[1]], 
+                successor[2] + 1
+            }
+            heapq.heappush( heap, succesor_obj )
+        
+    '''
+    heap = []
+
+    startingPoint = problem.getStartState()
+    startingStateObject = ( 0, id(startingPoint), [], startingPoint, {} ) # path_cost, equal_path_cost_tie_breaker, action_history, point
+
+    heapq.heappush(heap, startingStateObject)
+
+    while( len(heap) > 0 ):
+        currentStateObject = heapq.heappop(heap)
+
+        if problem.isGoalState( currentStateObject[3] ):
+            return currentStateObject[2]
+
+        # fast cache visited points
+        if currentStateObject[3][0] not in currentStateObject[4]:
+            currentStateObject[4][ currentStateObject[3][0] ] = {}
+        if currentStateObject[3][1] not in currentStateObject[4][ currentStateObject[3][0] ]:
+            currentStateObject[4][currentStateObject[3][0]][currentStateObject[3][1]] = True
+
+        for successor in problem.getSuccessors(currentStateObject[3]):
+            # if the successor point exists in our visited fast-cache of the currentStateObject, don't consider it
+            if not ( (successor[0][0] in currentStateObject[4]) and (successor[0][1] in currentStateObject[4][successor[0][0]]) ):
+                successorStateObject = [
+                    currentStateObject[0] + successor[2],
+                    id(successor),
+                    currentStateObject[2] + [successor[1]],
+                    successor[0],
+                    currentStateObject[4]
+                ]
+
+                heapq.heappush(heap, successorStateObject)
+
+    raise AssertionError("The problem is malformed. It does not have a solution.")
 
 def nullHeuristic(state, problem=None):
     """
