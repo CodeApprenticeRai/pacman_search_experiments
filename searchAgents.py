@@ -266,6 +266,7 @@ def euclideanHeuristic(position, problem, info={}):
 # This portion is incomplete.  Time to write code!  #
 #####################################################
 
+
 class CornersProblem(search.SearchProblem):
     """
     This search problem finds paths through all four corners of a layout.
@@ -281,6 +282,7 @@ class CornersProblem(search.SearchProblem):
         self.startingPosition = startingGameState.getPacmanPosition()
         top, right = self.walls.height-2, self.walls.width-2
         self.corners = ((1,1), (1,top), (right, 1), (right, top))
+        self.costFn = lambda x: 1
         for corner in self.corners:
             if not startingGameState.hasFood(*corner):
                 print 'Warning: no food in corner ' + str(corner)
@@ -293,23 +295,28 @@ class CornersProblem(search.SearchProblem):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
+
+        The state will consist of all corner points, and whether or
+        not they've been visited
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        startingState = [ self.startingPosition, [] ]
+
+        return startingState
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return len(state[1]) == 4
+
 
     def getSuccessors(self, state):
         """
         Returns successor states, the actions they require, and a cost of 1.
 
          As noted in search.py:
-            For a given state, this should return a list of triples, (successor,
+            For a given state, this should return a list of triples, (successor, !! not adhered to
             action, stepCost), where 'successor' is a successor to the current
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
@@ -317,17 +324,28 @@ class CornersProblem(search.SearchProblem):
 
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
+            x,y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
 
-            "*** YOUR CODE HERE ***"
+                # nextState = dict(state)
+                nextState = []
+                nextState.append( (nextx, nexty) )
+                nextState.append( state[1][:] )
 
+
+                if (( nextState[0] in self.corners) and ( nextState[0] not in state[1] ) ):
+                    nextState[1].append(  nextState[0] )
+
+                cost = self.costFn(nextState)
+                successors.append( ( nextState, action, cost ) )
+
+        # Bookkeeping for display purposes
         self._expanded += 1 # DO NOT CHANGE
+
         return successors
+
 
     def getCostOfActions(self, actions):
         """
@@ -359,8 +377,20 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    manhattan_distance_to_goal_cost = 0
+
+    for corner in problem.corners:
+        if corner not in state["visited"]:
+            manhattan_distance_to_goal_cost += manhattanDistance( state["coords"], corner  )
+
+    return manhattan_distance_to_goal_cost
+
+def manhattanDistance(point1, point2):
+    return  abs(point2[1] - point1[1]) + abs(point2[0] - point1[0])
+
+
+def euclidianDistance(point1, point2):
+    return int( ( (point2[1] - point1[1])**(2) + (point2[0] - point1[0])**(2) )**(1/2) )
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"

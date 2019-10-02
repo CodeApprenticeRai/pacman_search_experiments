@@ -90,31 +90,26 @@ def depthFirstSearch(problem):
     """
 
 
-    startingPoint = problem.getStartState()
+    startingState = problem.getStartState()
     actionHistory = []
-    visited = {
-        startingPoint[0] : { startingPoint[1]: True }
-    }
+    visited = []
 
-    return _depthFirstSearch( startingPoint, actionHistory, visited, problem )
+    return _depthFirstSearch( startingState, actionHistory, visited, problem )
 
-import copy
 
-def _depthFirstSearch( currentPoint, actionHistory, visited, problem ):
+def _depthFirstSearch( currentState, actionHistory, visited, problem ):
     # print currentPoint
-    if problem.isGoalState( currentPoint ):
+    if problem.isGoalState( currentState ):
         return actionHistory
 
-    if currentPoint[0] not in visited:
-        visited[currentPoint[0]] = {}
-    if currentPoint[1] not in visited[currentPoint[0]]:
-        visited[currentPoint[0]][currentPoint[1]] = True
+    visited.append( currentState )
 
     # print problem.getSuccessors( currentPoint )
-    for successor in problem.getSuccessors( currentPoint ):
-        if not ( (successor[0][0] in visited) and (successor[0][1] in visited[successor[0][0]]) ):
+    for successor in problem.getSuccessors( currentState ):
+        if successor[0] not in visited:
             actionHistory.append( successor[1] )
-            solution_candidate = _depthFirstSearch(successor[0], actionHistory, visited, problem)
+
+            solution_candidate = _depthFirstSearch( successor[0], actionHistory, visited, problem)
 
             if ( len(solution_candidate) > 0 ):
                 return solution_candidate
@@ -125,94 +120,50 @@ def _depthFirstSearch( currentPoint, actionHistory, visited, problem ):
 
 
 def breadthFirstSearch(problem):
-    from collections import deque
+    startingState = problem.getStartState()
+    queue = util.Queue() #deque( (startingState, []) )  #
+    queue.push( (startingState, []) )
+    visited = []
 
-    startingPoint = problem.getStartState()
-    queue = deque([startingPoint]) #util.Queue()
+    while (True):
+        currentState, currentStateActionHistory = queue.pop()
 
-    currentPoint = queue.popleft()
-    visited = {}
-    get_parent = { startingPoint[0] : { startingPoint[1]: None } }
-    while( not problem.isGoalState( currentPoint )  ):
-        if not currentPoint[0] in visited:
-            visited[currentPoint[0]] = {}
-        if not currentPoint[1] in visited[currentPoint[0]]:
-            visited[currentPoint[0]][currentPoint[1]] = True
+        if currentState not in visited:
+            visited.append( currentState )
 
-        for successor in problem.getSuccessors(currentPoint):
-            if not ((successor[0][0] in visited) and (successor[0][1] in visited[successor[0][0]])):
-                if not successor[0][0] in get_parent:
-                    get_parent[successor[0][0]] = {}
-                if not successor[0][1] in get_parent[successor[0][0]]:
-                    _parent =  list( currentPoint )
-                    _parent.append( successor[1] )
-                    get_parent[successor[0][0]][successor[0][1]] =  _parent # get parent also contains the direction from parent
-                queue.append( successor[0] ) # queue[i][3] == parent_point
-        currentPoint = queue.popleft()
+            #print(currentState, currentStateActionHistory )
 
-    # currentPoint == goal_state
-    action_history = deque()
-    parent = get_parent[currentPoint[0]][currentPoint[1]]
-    print(currentPoint)
-    while ( type(parent) != type(None) ):
-        action_history.appendleft( parent[2] )
-        parent = get_parent[parent[0]][parent[1]]
+            if problem.isGoalState( currentState ):
+                return currentStateActionHistory
 
-    return  action_history
+            for successor in problem.getSuccessors( currentState ):
+                # if successor[0] not in visited:
+                queue.push( ( successor[0], currentStateActionHistory + [ successor[1] ] )  )
+
+
+
+    raise AssertionError("The problem is malformed. Problem has no solution.")
 
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    '''
-        Algorithm:
-        
-        
-        We have a min-heap:
-        We have objects denoted: node_key : { path, path_sum } 
-        We have an initial object that is  [ starting_point,  [], 0 ]
-        
-        while ( we haven't reached our goal AND the min-heap is not empty ):  
-            current_obj = heap.pop()
-        for successor in problem.getSuccessors(initial_object):
-            successor_obj = [
-                succesor[0],
-                current_obj["action_history"] + [sucessor[1]], 
-                successor[2] + 1
-            }
-            heapq.heappush( heap, succesor_obj )
-        
-    '''
     heap = []
+    startingState = problem.getStartState()
+    visited = []
 
-    startingPoint = problem.getStartState()
-    startingStateObject = ( 0, id(startingPoint), [], startingPoint, {} ) # path_cost, equal_path_cost_tie_breaker, action_history, point
+    heapq.heappush(heap, ( 0, id(startingState), startingState, [] ) )
 
-    heapq.heappush(heap, startingStateObject)
+    while( True ):
+        accumulatedCost, priorityTieBreaker, currentState, currentStateActionHistory = heapq.heappop(heap)
 
-    while( len(heap) > 0 ):
-        currentStateObject = heapq.heappop(heap)
+        if currentState not in visited:
+            visited.append( currentState )
 
-        if problem.isGoalState( currentStateObject[3] ):
-            return currentStateObject[2]
+            if problem.isGoalState( currentState ):
+                return currentStateActionHistory
 
-        # fast cache visited points
-        if currentStateObject[3][0] not in currentStateObject[4]:
-            currentStateObject[4][ currentStateObject[3][0] ] = {}
-        if currentStateObject[3][1] not in currentStateObject[4][ currentStateObject[3][0] ]:
-            currentStateObject[4][currentStateObject[3][0]][currentStateObject[3][1]] = True
-
-        for successor in problem.getSuccessors(currentStateObject[3]):
-            # if the successor point exists in our visited fast-cache of the currentStateObject, don't consider it
-            if not ( (successor[0][0] in currentStateObject[4]) and (successor[0][1] in currentStateObject[4][successor[0][0]]) ):
-                successorStateObject = [
-                    currentStateObject[0] + successor[2],
-                    id(successor),
-                    currentStateObject[2] + [successor[1]],
-                    successor[0],
-                    currentStateObject[4]
-                ]
-
-                heapq.heappush(heap, successorStateObject)
+            for successor in problem.getSuccessors( currentState ):
+                heapq.heappush(heap, ( accumulatedCost + successor[2], id(successor[0]), successor[0], currentStateActionHistory + [ successor[1] ] )  )
 
     raise AssertionError("The problem is malformed. It does not have a solution.")
 
@@ -225,8 +176,30 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    #heap = []
+    heap = util.PriorityQueue()
+    startingState = problem.getStartState()
+    visited = []
+
+
+    #heapq.heappush(heap, ( 0, id(startingState), startingState, [] ) )
+    heap.push( ( 0, startingState, [] ),  0  )
+    while( True ):
+        accumulatedCost, currentState, currentStateActionHistory = heap.pop() #heapq.heappop(heap)
+
+        if currentState not in visited:
+            visited.append( currentState )
+
+            if problem.isGoalState( currentState ):
+                return currentStateActionHistory
+
+            for successor in problem.getSuccessors( currentState ):
+                #heapq.heappush(heap, ( accumulatedCost + successor[2] + heuristic( successor[0], problem ), id(successor[0]), successor[0], currentStateActionHistory + [ successor[1] ] )  )
+                successorAccumulatedCost = accumulatedCost + successor[2]
+                successorHeuristicCost = successorAccumulatedCost + heuristic( successor[0], problem )
+                heap.push( ( successorAccumulatedCost, successor[0], currentStateActionHistory + [ successor[1] ] ), successorHeuristicCost  )
+
+    raise AssertionError("The problem is malformed. It does not have a solution.")
 
 
 # Abbreviations
