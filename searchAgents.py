@@ -377,13 +377,20 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    manhattan_distance_to_goal_cost = 0
+    currentPosition = state[0]
 
-    for corner in problem.corners:
-        if corner not in state["visited"]:
-            manhattan_distance_to_goal_cost += manhattanDistance( state["coords"], corner  )
+    heuristicCost = 0
+    unvisitedCorners = [ corner for corner in problem.corners if corner not in state[1] ]
 
-    return manhattan_distance_to_goal_cost
+    while ( len( unvisitedCorners) > 0 ):
+        # calculate the distance from currentPosition to each corner
+        distances = [ ( manhattanDistance( currentPosition, unvisitedCorners[i] ), i ) for i in range( len(unvisitedCorners) ) ]
+        minimum_tuple = min(distances, key=lambda tup: tup[0] )
+        heuristicCost += minimum_tuple[0]
+        currentPosition = unvisitedCorners[ minimum_tuple[1] ]
+        unvisitedCorners.pop( minimum_tuple[1] )
+
+    return heuristicCost
 
 def manhattanDistance(point1, point2):
     return  abs(point2[1] - point1[1]) + abs(point2[0] - point1[0])
