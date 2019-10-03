@@ -461,6 +461,8 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         self.searchType = FoodSearchProblem
 
+
+
 def foodHeuristic(state, problem):
     """
     Your heuristic for the FoodSearchProblem goes here.
@@ -490,19 +492,11 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     currentPosition, foodGrid = state
-    unvisitedFoodGridPositions = foodGrid.asList()
+    foodGrid = foodGrid.asList()
+    distances = [ mazeDistance(currentPosition, foodGrid[i], problem.startingGameState) for i in range(len(foodGrid)) ]
+    maxDistance = max(distances) if (len(distances) > 0) else 0
 
-    heuristicCost = 0
-
-    while ( len( unvisitedFoodGridPositions ) > 0 ):
-        # calculate the distance from currentPosition to nearest unvisitedFoodGrid
-        distances = [ ( manhattanDistance( currentPosition, unvisitedFoodGridPositions[i] ), i ) for i in range( len(unvisitedFoodGridPositions) ) ]
-        minimum_tuple = min(distances, key=lambda tup: tup[0] )
-        heuristicCost += minimum_tuple[0]
-        currentPosition = unvisitedFoodGridPositions[ minimum_tuple[1] ]
-        unvisitedFoodGridPositions.pop( minimum_tuple[1] )
-
-    return heuristicCost
+    return maxDistance
 
 def foodHeuristic1(state, problem):
     """
