@@ -489,9 +489,76 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    currentPosition, foodGrid = state
+    unvisitedFoodGridPositions = foodGrid.asList()
+
+    heuristicCost = 0
+
+    while ( len( unvisitedFoodGridPositions ) > 0 ):
+        # calculate the distance from currentPosition to nearest unvisitedFoodGrid
+        distances = [ ( manhattanDistance( currentPosition, unvisitedFoodGridPositions[i] ), i ) for i in range( len(unvisitedFoodGridPositions) ) ]
+        minimum_tuple = min(distances, key=lambda tup: tup[0] )
+        heuristicCost += minimum_tuple[0]
+        currentPosition = unvisitedFoodGridPositions[ minimum_tuple[1] ]
+        unvisitedFoodGridPositions.pop( minimum_tuple[1] )
+
+    return heuristicCost
+
+def foodHeuristic1(state, problem):
+    """
+    Your heuristic for the FoodSearchProblem goes here.
+
+    This heuristic must be consistent to ensure correctness.  First, try to come
+    up with an admissible heuristic; almost all admissible heuristics will be
+    consistent as well.
+
+    If using A* ever finds a solution that is worse uniform cost search finds,
+    your heuristic is *not* consistent, and probably not admissible!  On the
+    other hand, inadmissible or inconsistent heuristics may find optimal
+    solutions, so be careful.
+
+    The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a Grid
+    (see game.py) of either True or False. You can call foodGrid.asList() to get
+    a list of food coordinates instead.
+
+    If you want access to info like walls, capsules, etc., you can query the
+    problem.  For example, problem.walls gives you a Grid of where the walls
+    are.
+
+    If you want to *store* information to be reused in other calls to the
+    heuristic, there is a dictionary called problem.heuristicInfo that you can
+    use. For example, if you only want to count the walls once and store that
+    value, try: problem.heuristicInfo['wallCount'] = problem.walls.count()
+    Subsequent calls to this heuristic can access
+    problem.heuristicInfo['wallCount']
+    """
+    currentPosition, foodGrid = state
+    unvisitedFoodGridPositions = foodGrid.asList()
+
+    heuristicCosts = []
+
+    if ( len(unvisitedFoodGridPositions) > 0 ):
+        for i in range( len(unvisitedFoodGridPositions) ):
+            _unvisitedFoodGrids = unvisitedFoodGridPositions[:]
+            firstVisitedFoodGrid = _unvisitedFoodGrids[i]
+
+            _heuristicCost = manhattanDistance( currentPosition, firstVisitedFoodGrid )
+            currentPosition = firstVisitedFoodGrid
+
+            _unvisitedFoodGrids.pop(i)
+
+            while ( len( _unvisitedFoodGrids ) > 0 ):
+                # calculate the distance from currentPosition to nearest unvisitedFoodGrid
+                distances = [ ( manhattanDistance( currentPosition, _unvisitedFoodGrids[i] ), i ) for i in range( len(_unvisitedFoodGrids) ) ]
+                minimum_tuple = min(distances, key=lambda tup: tup[0] )
+                _heuristicCost += minimum_tuple[0]
+                currentPosition = _unvisitedFoodGrids[ minimum_tuple[1] ]
+                _unvisitedFoodGrids.pop( minimum_tuple[1] )
+            heuristicCosts.append( _heuristicCost )
+    else:
+        heuristicCosts.append(0)
+
+    return min(heuristicCosts)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -521,8 +588,8 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.astar(problem)
+
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -555,10 +622,11 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         The state is Pacman's position. Fill this in with a goal test that will
         complete the problem definition.
         """
-        x,y = state
+        foodGridLocations = self.food.asList()
+        distances = [(manhattanDistance(state, foodGridLocation), foodGridLocation) for foodGridLocation in foodGridLocations ]
+        minimum_tuple = min(distances, key=lambda tup: tup[0])
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return ( state == minimum_tuple[1] )
 
 def mazeDistance(point1, point2, gameState):
     """
